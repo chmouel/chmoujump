@@ -4,7 +4,7 @@ I used to have some code to combine the two and dicsovered :
 
 https://github.com/andrewferrier/fzf-z
 
-so I merged some of my code with andrew's plugin and made it my hope with a narcissic prefix (naming is hard i have no idea what to use otherwise)
+so I merged some of my code with andrew's plugin and made it my own with a narcissic prefix (naming is hard i have no idea what to use otherwise)
 
 ## Install
 
