@@ -1,3 +1,5 @@
+# Chmoujump -  🚀
+
 A combinaison of [zshz](https://github.com/agkozak/zsh-z) and favourite directories
 
 I used to have some code to combine the two and dicsovered :
