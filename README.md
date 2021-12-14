@@ -10,6 +10,8 @@ so I merged some of my code with andrew's plugin and made it my own with a narci
 
 ## Install
 
+with [zplug](https://github.com/zplug/zplug)
+
 ```sh
 zplug 'chmouel/chmoujump'
 ```
