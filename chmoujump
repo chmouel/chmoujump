@@ -56,12 +56,13 @@ function chmoujump() {
 	    args="-q ${fnd}"
     fi
 
-    local fdlisting="{ ${fdcmd} -d 2 -t d . ${=jumpdirs} }"
-    # local modifiers="${sedcmd} -e \"s,${root},,;\""
-    local modifiers="true"
+    set -x
+    local fdlisting="{ ${fdcmd} -d 2 -t d ${=jumpdirs} }"
+    local sorter="uniq -u"
     local fzfcmd="fzf -1 --no-sort --tiebreak=end,index --header=\"Choose a directory to jump to:\" --preview=\"${CHMOUJUMP_PREVIEW_COMMAND}\" --min-height=10 --height 30%  ${args}"
 
-    cmd="res=\$({ ${zshz_listing} ; ${fdlisting} } | ${fzfcmd})"
+    cmd="res=\$({ ${zshz_listing} ; ${fdlisting} } | ${sorter} | ${fzfcmd})"
+    set +x
     eval ${cmd}
 
     [[ -n ${res} ]] && {
