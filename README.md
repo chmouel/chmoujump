@@ -1,6 +1,6 @@
 # Chmoujump -  🚀
 
-A combinaison of [zshz](https://github.com/agkozak/zsh-z) and favourite directories
+A combinaison of [zshz](https://github.com/agkozak/zsh-z) and favourite directorie path.
 
 I used to have some code to combine the two and dicsovered :
 
