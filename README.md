@@ -1,13 +1,14 @@
 # Chmoujump -  🚀
 
-A combinaison of [zshz](https://github.com/agkozak/zsh-z) and favourite
-directorie path.
+A combinaison of [zshz](https://github.com/agkozak/zsh-z), favourite
+directorie path and aliases.
 
-I used to have some code to combine the two and dicsovered :
+I used to have an hacky function which did the thing in a non elegant way and somehow dicsovered the much nicer :
 
 https://github.com/andrewferrier/fzf-z
 
-so I merged some of my code with andrew's plugin and made it my own with a narcissic prefix (naming is hard i have no idea what to use otherwise)
+so I merged some of my code with andrew's plugin and made it my own with a narcissic prefix
+(i have no idea what to use otherwise)
 
 ## Install
 
@@ -44,8 +45,8 @@ ALIAS: $HOME/project/fav
 
 ### Options
 
-`-P`: show a preview pan of file or directory.
-`-f`: use fuzzy search (by default it sets as exact)
-`-p`: just print the path don't cd it
-`-n`: force using fzf search instead of zshz history
-`-z`: force using zshz search and no fzf fallback
+* `-P`: show a preview pan of file or directory.
+* `-f`: use fuzzy search (by default it sets as exact)
+* `-p`: just print the path don't cd it
+* `-n`: force using fzf search instead of zshz history
+* `-z`: force using zshz search and no fzf fallback
