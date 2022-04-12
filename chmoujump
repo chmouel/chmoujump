@@ -46,7 +46,6 @@ function chmoujump() {
     }
 
     fnd=$1
-        set -x
     if [[ -n ${fnd} ]];then
         if (( ${+CHMOUJUMP_ALIASES[$fnd]} ));then
             echo "ALIAS: ${CHMOUJUMP_ALIASES[$fnd]}"
