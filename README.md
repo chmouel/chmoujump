@@ -27,12 +27,20 @@ C-g is bound to it and will show you the last directories from zsh-z combined wi
 CHMOUJUMP_DIRS="/dir1 /dir2"
 ```
 
-By default this goes to `$GOPATH/src/github.com` and if it doesn't exist to `$HOME`.
+By default, this goes to `$GOPATH/src/github.com` and if it doesn't exist to `$HOME`.
 
 With [fd](https://github.com/sharkdp/fd) it will grab the first two subdir
 levels of those directories use [fzf](https://github.com/junegunn/fzf) to ask
 you which one you want and show a preview with [exa](https://the.exa.website/)
 if avail or ls/tree
+
+It can as well match an alias, i.e:
+
+```shell
+-% declare -A CHMOUJUMP_ALIASES=([fav]=$HOME/project/fav)
+-% chmoujump fav
+ALIAS: $HOME/project/fav
+```
 
 ### Options
 

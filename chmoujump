@@ -1,5 +1,6 @@
 #!/usr/bin/env zsh
 function chmoujump() {
+
     local jumpdirs=${CHMOUJUMP_DIRS:-"$GOPATH/src/github.com"}
     [[ -d ${jumpdirs} ]] || jumpdirs=$HOME
     local opt_n opt_p opt fnd
@@ -14,17 +15,15 @@ function chmoujump() {
     local zshz_listing="{ zshz -l | ${reverser} | sed 's/.* //' }"
 
 
-    if ! (( ${+CHMOUJUMP_PREVIEW_COMMAND} )); then
-        command -v exa >/dev/null 2>&1
+    command -v exa >/dev/null 2>&1
+    if [ $? -eq 0 ]; then
+        preview_command="exa --level 2 --tree --color=always --group-directories-first {}"
+    else
+        command -v tree >/dev/null 2>&1
         if [ $? -eq 0 ]; then
-            CHMOUJUMP_PREVIEW_COMMAND="exa --level 2 --tree --color=always --group-directories-first {}"
+            preview_command="tree -C -L 2 -x --noreport --dirsfirst {}"
         else
-            command -v tree >/dev/null 2>&1
-            if [ $? -eq 0 ]; then
-                CHMOUJUMP_PREVIEW_COMMAND="tree -C -L 2 -x --noreport --dirsfirst {}"
-            else
-                CHMOUJUMP_PREVIEW_COMMAND="ls -1 -R {}"
-            fi
+            preview_command="ls -1 -R {}"
         fi
     fi
 
@@ -34,7 +33,7 @@ function chmoujump() {
             z) opt_zle=true;;
             n) opt_n=true;;
             p) opt_p=true;;
-            P) preview="--preview=\"${CHMOUJUMP_PREVIEW_COMMAND}\"";;
+            P) preview="--preview=\"${preview_command}\"";;
             \*) print nothing: $OPTARG; usage;;
             \?) print invalid option: $OPTARG; usage;;
         esac
@@ -47,7 +46,14 @@ function chmoujump() {
     }
 
     fnd=$1
+        set -x
     if [[ -n ${fnd} ]];then
+        if (( ${+CHMOUJUMP_ALIASES[$fnd]} ));then
+            echo "ALIAS: ${CHMOUJUMP_ALIASES[$fnd]}"
+            [[ -z ${opt_p} ]] && cd ${CHMOUJUMP_ALIASES[$fnd]}
+            return
+	     fi
+
 	    [[ -z ${opt_n} ]] && {
 		    local zz=$(zshz -e ${fnd})
 		    [[ -n ${zz} ]] && {
@@ -61,7 +67,7 @@ function chmoujump() {
 
     local fdlisting="{ ${fdcmd} -d 2 -t d . ${=jumpdirs} }"
     local sorter="uniq -u"
-    # --preview=\"${CHMOUJUMP_PREVIEW_COMMAND}\"
+    # --preview=\"${preview_command}\"
     local fzfcmd="fzf ${preview} ${notfuzzy} -1 --no-sort --tiebreak=end,index --header=\"Choose a directory to jump to:\" --min-height=10 --height 30%  ${args}"
 
     cmd="res=\$({ ${zshz_listing} ; ${fdlisting} } | ${sorter} | ${fzfcmd})"
