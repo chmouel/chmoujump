@@ -45,8 +45,8 @@ ALIAS: $HOME/project/fav
 
 ### Options
 
-`-P`: show a preview pan of file or directory.
-`-f`: use fuzzy search (by default it sets as exact)
-`-p`: just print the path don't cd it
-`-n`: force using fzf search instead of zshz history
-`-z`: force using zshz search and no fzf fallback
+* `-P`: show a preview pan of file or directory.
+* `-f`: use fuzzy search (by default it sets as exact)
+* `-p`: just print the path don't cd it
+* `-n`: force using fzf search instead of zshz history
+* `-z`: force using zshz search and no fzf fallback
