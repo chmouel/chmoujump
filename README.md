@@ -1,6 +1,7 @@
 # Chmoujump -  🚀
 
-A combinaison of [zshz](https://github.com/agkozak/zsh-z) and favourite directorie path.
+A combinaison of [zshz](https://github.com/agkozak/zsh-z) and favourite
+directorie path.
 
 I used to have some code to combine the two and dicsovered :
 
@@ -20,12 +21,23 @@ or whatever is your zsh plugin manager,
 
 ## Usage
 
-C-g is bound to it and will show you the last directories from zsh-z combined with your favourites directories, you can define with the env variable : 
+C-g is bound to it and will show you the last directories from zsh-z combined with your favourites directories, you can define with the env variable: 
 
-```
+```shell
 CHMOUJUMP_DIRS="/dir1 /dir2"
 ```
 
-by default this goes to `$GOPATH/src/github.com` and if it doesn't exist to `$HOME`.
+By default this goes to `$GOPATH/src/github.com` and if it doesn't exist to `$HOME`.
 
-with [fd](https://github.com/sharkdp/fd) it will grab the first two subdir levels of those directories use [fzf](https://github.com/junegunn/fzf) to ask you which one you want and show a preview with [exa](https://the.exa.website/) if avail or ls/tree
+With [fd](https://github.com/sharkdp/fd) it will grab the first two subdir
+levels of those directories use [fzf](https://github.com/junegunn/fzf) to ask
+you which one you want and show a preview with [exa](https://the.exa.website/)
+if avail or ls/tree
+
+### Options
+
+`-P`: show a preview pan of file or directory.
+`-f`: use fuzzy search (by default it sets as exact)
+`-p`: just print the path don't cd it
+`-n`: force using fzf search instead of zshz history
+`-z`: force using zshz search and no fzf fallback

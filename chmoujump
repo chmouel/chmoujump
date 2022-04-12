@@ -3,9 +3,10 @@ function chmoujump() {
     local jumpdirs=${CHMOUJUMP_DIRS:-"$GOPATH/src/github.com"}
     [[ -d ${jumpdirs} ]] || jumpdirs=$HOME
     local opt_n opt_p opt fnd
-    local res args
+    local res args preview
+    local notfuzzy="-e"
     local sedcmd=sed;type -p gsed >/dev/null 2>/dev/null && sedcmd=gsed # osx brew sed detection
-    local fdcmd=fd;type -p fdfind >/dev/null 2>/dev/null && fdcmd=fdfind # linux package    
+    local fdcmd=fd;type -p fdfind >/dev/null 2>/dev/null && fdcmd=fdfind # linux package
     local reverser=tac
     if [[ $OSTYPE == darwin* && -z $(whence tac) ]]; then
         reverser='tail -r'
@@ -27,11 +28,13 @@ function chmoujump() {
         fi
     fi
 
-    while getopts ":npz" opt;do
+    while getopts ":npzfP" opt;do
         case $opt in
+            f) notfuzzy=;;
             z) opt_zle=true;;
             n) opt_n=true;;
             p) opt_p=true;;
+            P) preview="--preview=\"${CHMOUJUMP_PREVIEW_COMMAND}\"";;
             \*) print nothing: $OPTARG; usage;;
             \?) print invalid option: $OPTARG; usage;;
         esac
@@ -42,7 +45,7 @@ function chmoujump() {
         opt_n=true
         zshz_listing="{ true }"
     }
-    
+
     fnd=$1
     if [[ -n ${fnd} ]];then
 	    [[ -z ${opt_n} ]] && {
@@ -58,7 +61,8 @@ function chmoujump() {
 
     local fdlisting="{ ${fdcmd} -d 2 -t d . ${=jumpdirs} }"
     local sorter="uniq -u"
-    local fzfcmd="fzf -1 --no-sort --tiebreak=end,index --header=\"Choose a directory to jump to:\" --preview=\"${CHMOUJUMP_PREVIEW_COMMAND}\" --min-height=10 --height 30%  ${args}"
+    # --preview=\"${CHMOUJUMP_PREVIEW_COMMAND}\"
+    local fzfcmd="fzf ${preview} ${notfuzzy} -1 --no-sort --tiebreak=end,index --header=\"Choose a directory to jump to:\" --min-height=10 --height 30%  ${args}"
 
     cmd="res=\$({ ${zshz_listing} ; ${fdlisting} } | ${sorter} | ${fzfcmd})"
     eval ${cmd}
