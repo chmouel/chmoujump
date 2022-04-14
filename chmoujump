@@ -49,7 +49,9 @@ function chmoujump() {
     if [[ -n ${fnd} ]];then
         if (( ${+CHMOUJUMP_ALIASES[$fnd]} ));then
             echo "ALIAS: ${CHMOUJUMP_ALIASES[$fnd]}"
-            [[ -z ${opt_p} ]] && cd ${CHMOUJUMP_ALIASES[$fnd]}
+            [[ -z ${opt_p} ]] && {
+                cd ${CHMOUJUMP_ALIASES[$fnd]}
+            }
             return
 	     fi
 
@@ -57,7 +59,10 @@ function chmoujump() {
 		    local zz=$(zshz -e ${fnd})
 		    [[ -n ${zz} ]] && {
 			    echo "ZSHZ: ${zz}"
-			    [[ -z ${opt_p} ]] && cd ${zz}
+			    [[ -z ${opt_p} ]] && {
+                    [[ ${zz} =~ ^\~ ]] && zz=${zz/#\~/${HOME}}
+                    cd ${zz}
+                }
 			    return
 		    }
 	    }
@@ -74,7 +79,10 @@ function chmoujump() {
 
     [[ -n ${res} ]] && {
 	    echo ${res}
-	    [[ -z ${opt_p} ]] && cd ${res}
+	    [[ -z ${opt_p} ]] && {
+            [[ ${res} =~ ^\~ ]] && res=${res/#\~/${HOME}}
+            cd ${res}
+        }
     }
 }
 # vim: ft=zsh
