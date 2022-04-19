@@ -1,6 +1,5 @@
 #!/usr/bin/env zsh
 function chmoujump() {
-
     local jumpdirs=${CHMOUJUMP_DIRS:-"$GOPATH/src/github.com"}
     [[ -d ${jumpdirs} ]] || jumpdirs=$HOME
     local opt_n opt_p opt fnd
@@ -30,7 +29,6 @@ function chmoujump() {
     while getopts ":npzfP" opt;do
         case $opt in
             f) notfuzzy=;;
-            z) opt_zle=true;;
             n) opt_n=true;;
             p) opt_p=true;;
             P) preview="--preview=\"${preview_command}\"";;
@@ -70,19 +68,20 @@ function chmoujump() {
     fi
 
     local fdlisting="{ ${fdcmd} -d 2 -t d . ${=jumpdirs} }"
-    local sorter="uniq -u"
+    local sorter="sed 's,$HOME,\~,'|uniq"
     # --preview=\"${preview_command}\"
-    local fzfcmd="fzf ${preview} ${notfuzzy} -1 --no-sort --tiebreak=end,index --header=\"Choose a directory to jump to:\" --min-height=10 --height 30%  ${args}"
+    local fzfcmd="fzf ${preview} ${notfuzzy} -1 --no-sort --tiebreak=end,index --header=\"Choose a directory to jump to:\" ${args}"
 
     cmd="res=\$({ ${zshz_listing} ; ${fdlisting} } | ${sorter} | ${fzfcmd})"
     eval ${cmd}
 
     [[ -n ${res} ]] && {
+        [[ ${res} =~ ^\~ ]] && res=${res/#\~/${HOME}}
 	    echo ${res}
 	    [[ -z ${opt_p} ]] && {
-            [[ ${res} =~ ^\~ ]] && res=${res/#\~/${HOME}}
             cd ${res}
         }
     }
+set +x
 }
 # vim: ft=zsh
