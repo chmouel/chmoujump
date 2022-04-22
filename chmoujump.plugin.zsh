@@ -8,7 +8,7 @@ CHMOUJUMP_SCRIPT_PATH=
 source ${0:a:h}/chmoujump
 
 __chmoujump() {
-    chmoujump -zn | while read item; do
+    { chmoujump -A ; chmoujump -n } | while read item; do
         printf '%q ' "$item"
     done
     echo

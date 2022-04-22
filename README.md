@@ -35,7 +35,7 @@ levels of those directories use [fzf](https://github.com/junegunn/fzf) to ask
 you which one you want and show a preview with [exa](https://the.exa.website/)
 if avail or ls/tree
 
-It can as well match an alias, i.e:
+It can as well match an alias, for example
 
 ```shell
 -% declare -A CHMOUJUMP_ALIASES=([fav]=$HOME/project/fav)
@@ -49,4 +49,5 @@ ALIAS: $HOME/project/fav
 * `-f`: use fuzzy search (by default it sets as exact)
 * `-p`: just print the path don't cd it
 * `-n`: force using fzf search instead of zshz history
-* `-z`: force using zshz search and no fzf fallback
+* `-a`: Choose from alias via fzf
+* `-A`: Just list the aliases sorted by the git index modification times

@@ -2,7 +2,7 @@
 function chmoujump() {
     local jumpdirs=${CHMOUJUMP_DIRS:-"$GOPATH/src/github.com"}
     [[ -d ${jumpdirs} ]] || jumpdirs=$HOME
-    local opt_n opt_p opt fnd
+    local opt_n opt_p opt fnd listalias choosealias
     local res args preview
     local notfuzzy="-e"
     local sedcmd=sed;type -p gsed >/dev/null 2>/dev/null && sedcmd=gsed # osx brew sed detection
@@ -26,14 +26,16 @@ function chmoujump() {
         fi
     fi
 
-    while getopts ":npzfP" opt;do
+    while getopts ":npfPAa" opt;do
         case $opt in
+            a) choosealias=true;;
+            A) listalias=true;;
             f) notfuzzy=;;
             n) opt_n=true;;
             p) opt_p=true;;
             P) preview="--preview=\"${preview_command}\"";;
-            \*) print nothing: $OPTARG; usage;;
-            \?) print invalid option: $OPTARG; usage;;
+            \*) print nothing: $OPTARG; return;;
+            \?) print invalid option: $OPTARG; return;;
         esac
     done
     (( OPTIND > 1 )) && shift $(( OPTIND - 1 ))
@@ -41,6 +43,22 @@ function chmoujump() {
     (( $+functions[zshz] )) || {
         opt_n=true
         zshz_listing="{ true }"
+    }
+
+    [[ ${listalias} == true ]] && {
+        zmodload zsh/stat
+        for ((i=1; i<$#CHMOUJUMP_ALIASES; i++)); do times[$i]=$(stat +ctime -L -- \
+            ${${(@v)CHMOUJUMP_ALIASES}[$i]}/.git/index):${${(@v)CHMOUJUMP_ALIASES}[$i]/.git/index}; done
+        print -l ${${${(o)times}#*:}/$HOME\//\~/}
+        return
+    }
+
+    [[ ${choosealias} == true ]] && {
+        choosealias=$(chmoujump -A|fzf --tac)
+        choosealias=${choosealias##* }
+        [[ ${choosealias} =~ ^\~ ]] && choosealias=${choosealias/#\~/${HOME}}
+	    [[ -z ${opt_p} ]] && cd ${choosealias}
+        return
     }
 
     fnd=$1
