@@ -82,6 +82,5 @@ function chmoujump() {
             cd ${res}
         }
     }
-set +x
 }
 # vim: ft=zsh
