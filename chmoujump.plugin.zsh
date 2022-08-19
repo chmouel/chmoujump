@@ -34,11 +34,11 @@ should-accept-line() {
     fi
 }
 
-zle -N chmoujump-dir-widget
-bindkey -M viins -r '^G'
-bindkey -M vicmd -r '^G'
-bindkey -M emacs -r '^G'
+# zle -N chmoujump-dir-widget
+# bindkey -M viins -r '^G'
+# bindkey -M vicmd -r '^G'
+# bindkey -M emacs -r '^G'
 
-bindkey -M viins '^G' chmoujump-dir-widget
-bindkey -M vicmd '^G' chmoujump-dir-widget
-bindkey -M emacs '^G' chmoujump-dir-widget
+# bindkey -M viins '^G' chmoujump-dir-widget
+# bindkey -M vicmd '^G' chmoujump-dir-widget
+# bindkey -M emacs '^G' chmoujump-dir-widget
