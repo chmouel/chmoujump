@@ -28,14 +28,14 @@ function chmoujump() {
 
     while getopts ":npfPAa" opt;do
         case $opt in
-            a) choosealias=true;;
-            A) listalias=true;;
-            f) notfuzzy=;;
-            n) opt_n=true;;
-            p) opt_p=true;;
-            P) preview="--preview=\"${preview_command}\"";;
-            \*) print nothing: $OPTARG; return;;
-            \?) print invalid option: $OPTARG; return;;
+            a) choosealias=true ;;
+            A) listalias=true ;;
+            f) notfuzzy= ;;
+            n) opt_n=true ;;
+            p) opt_p=true ;;
+            P) preview="--preview=\"${preview_command}\"" ;;
+            \*) print nothing: $OPTARG; return ;;
+            \?) print invalid option: $OPTARG; return ;;
         esac
     done
     (( OPTIND > 1 )) && shift $(( OPTIND - 1 ))
@@ -57,7 +57,7 @@ function chmoujump() {
         choosealias=$(chmoujump -A|fzf --tac)
         choosealias=${choosealias##* }
         [[ ${choosealias} =~ ^\~ ]] && choosealias=${choosealias/#\~/${HOME}}
-	    [[ -z ${opt_p} ]] && cd ${choosealias}
+        [[ -z ${opt_p} ]] && cd ${choosealias}
         return
     }
 
@@ -69,20 +69,20 @@ function chmoujump() {
                 cd ${CHMOUJUMP_ALIASES[$fnd]}
             }
             return
-	     fi
+        fi
 
-	    [[ -z ${opt_n} ]] && {
-		    local zz=$(zshz -e ${fnd})
-		    [[ -n ${zz} ]] && {
-			    echo "ZSHZ: ${zz}"
-			    [[ -z ${opt_p} ]] && {
+        [[ -z ${opt_n} ]] && {
+            local zz=$(zshz -e ${fnd})
+            [[ -n ${zz} ]] && {
+                echo "ZSHZ: ${zz}"
+                [[ -z ${opt_p} ]] && {
                     [[ ${zz} =~ ^\~ ]] && zz=${zz/#\~/${HOME}}
                     cd ${zz}
                 }
-			    return
-		    }
-	    }
-	    args="-q ${fnd}"
+                return
+            }
+        }
+        args="-q ${fnd}"
     fi
 
     local fdlisting="{ ${fdcmd} -d 2 -t d . ${=jumpdirs} }"
@@ -95,8 +95,8 @@ function chmoujump() {
 
     [[ -n ${res} ]] && {
         [[ ${res} =~ ^\~ ]] && res=${res/#\~/${HOME}}
-	    echo ${res}
-	    [[ -z ${opt_p} ]] && {
+        echo ${res}
+        [[ -z ${opt_p} ]] && {
             cd ${res}
         }
     }
