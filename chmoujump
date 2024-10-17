@@ -86,7 +86,7 @@ function chmoujump() {
     fi
 
     local fdlisting="{ ${fdcmd} -d 2 -t d . ${=jumpdirs} }"
-    local sorter="sed 's,$HOME,\~,'|uniq"
+    local sorter="sed -e 's,$HOME,\~,' -e 's,/$,,'|sort -u"
     # --preview=\"${preview_command}\"
     local fzfcmd="fzf ${preview} ${notfuzzy} -1 --no-sort --tiebreak=end,index --header=\"Choose a directory to jump to:\" ${args}"
 
