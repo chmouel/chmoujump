@@ -88,7 +88,7 @@ function chmoujump() {
     local fdlisting="{ ${fdcmd} -d 2 -t d . ${=jumpdirs} }"
     local sorter="sed -e 's,$HOME,\~,' -e 's,/$,,'|sort -u"
     # --preview=\"${preview_command}\"
-    local fzfcmd="fzf ${preview} ${notfuzzy} -1 --no-sort --tiebreak=end,index --header=\"Choose a directory to jump to:\" ${args}"
+    local fzfcmd="fzf ${preview} ${notfuzzy} --tac -1 --no-sort --tiebreak=end,index --header=\"Choose a directory to jump to:\" ${args}"
 
     cmd="res=\$({ ${zshz_listing} ; ${fdlisting} } | ${sorter} | ${fzfcmd})"
     eval ${cmd}
