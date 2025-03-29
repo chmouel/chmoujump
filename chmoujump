@@ -5,37 +5,36 @@ function chmoujump() {
     local opt_n opt_p opt fnd listalias choosealias
     local res args preview
     local notfuzzy="-e"
-    local sedcmd=sed;type -p gsed >/dev/null 2>/dev/null && sedcmd=gsed # osx brew sed detection
-    local fdcmd=fd;type -p fdfind >/dev/null 2>/dev/null && fdcmd=fdfind # linux package
-    local reverser=tac
-    if [[ $OSTYPE == darwin* && -z $(whence tac) ]]; then
-        reverser='tail -r'
-    fi
-    local zshz_listing="{ zshz -l | ${reverser} | sed 's/.* //' }"
+    local sedcmd="sed"
+    local fdcmd="fd"
 
+    (( $+commands[gsed] )) && sedcmd="gsed"
+    (( $+commands[fdfind] )) && fdcmd="fdfind"
 
-    command -v exa >/dev/null 2>&1
-    if [ $? -eq 0 ]; then
+    local reverser="tac"
+    [[ $OSTYPE == darwin* ]] && (( ! $+commands[tac] )) && reverser="tail -r"
+
+    local zshz_listing="{ zshz -t | ${reverser} | $sedcmd 's/.* //' }"
+
+    local preview_command
+    if (( $+commands[exa] )); then
         preview_command="exa --level 2 --tree --color=always --group-directories-first {}"
+    elif (( $+commands[tree] )); then
+        preview_command="tree -C -L 2 -x --noreport --dirsfirst {}"
     else
-        command -v tree >/dev/null 2>&1
-        if [ $? -eq 0 ]; then
-            preview_command="tree -C -L 2 -x --noreport --dirsfirst {}"
-        else
-            preview_command="ls -1 -R {}"
-        fi
+        preview_command="ls -1 -R {}"
     fi
 
-    while getopts ":npfPAa" opt;do
+    while getopts ":npfPAa" opt; do
         case $opt in
             a) choosealias=true ;;
             A) listalias=true ;;
-            f) notfuzzy= ;;
+            f) notfuzzy="" ;;
             n) opt_n=true ;;
             p) opt_p=true ;;
             P) preview="--preview=\"${preview_command}\"" ;;
-            \*) print nothing: $OPTARG; return ;;
-            \?) print invalid option: $OPTARG; return ;;
+            *) print "Nothing: $OPTARG"; return 1 ;; # Fixed typo in \*
+            \?) print "Invalid option: $OPTARG"; return 1 ;; # Added return value
         esac
     done
     (( OPTIND > 1 )) && shift $(( OPTIND - 1 ))
@@ -47,14 +46,18 @@ function chmoujump() {
 
     [[ ${listalias} == true ]] && {
         zmodload zsh/stat
-        for ((i=1; i<$#CHMOUJUMP_ALIASES; i++)); do times[$i]=$(stat +ctime -L -- \
-            ${${(@v)CHMOUJUMP_ALIASES}[$i]}/.git/index):${${(@v)CHMOUJUMP_ALIASES}[$i]/.git/index}; done
-        print -l ${${${(o)times}#*:}/$HOME\//\~/}
+        local -A times
+        for key in ${(k)CHMOUJUMP_ALIASES}; do
+            local target=${CHMOUJUMP_ALIASES[$key]}
+            local index_file="${target}/.git/index"
+            [[ -f "$index_file" ]] && times[$key]=$(stat +ctime -L -- "$index_file"):$target
+        done
+        print -l ${${${(vo)times}#*:}/$HOME\//\~/}
         return
     }
 
     [[ ${choosealias} == true ]] && {
-        choosealias=$(chmoujump -A|fzf --tac)
+        choosealias=$(chmoujump -A | fzf --tac)
         choosealias=${choosealias##* }
         [[ ${choosealias} =~ ^\~ ]] && choosealias=${choosealias/#\~/${HOME}}
         [[ -z ${opt_p} ]] && cd ${choosealias}
@@ -62,12 +65,10 @@ function chmoujump() {
     }
 
     fnd=$1
-    if [[ -n ${fnd} ]];then
-        if (( ${+CHMOUJUMP_ALIASES[$fnd]} ));then
+    if [[ -n ${fnd} ]]; then
+        if (( ${+CHMOUJUMP_ALIASES[$fnd]} )); then
             echo "ALIAS: ${CHMOUJUMP_ALIASES[$fnd]}"
-            [[ -z ${opt_p} ]] && {
-                cd ${CHMOUJUMP_ALIASES[$fnd]}
-            }
+            [[ -z ${opt_p} ]] && cd ${CHMOUJUMP_ALIASES[$fnd]}
             return
         fi
 
@@ -86,19 +87,14 @@ function chmoujump() {
     fi
 
     local fdlisting="{ ${fdcmd} -d 2 -t d . ${=jumpdirs} }"
-    local sorter="sed -e 's,$HOME,\~,' -e 's,/$,,'|sort -u"
-    # --preview=\"${preview_command}\"
-    local fzfcmd="fzf ${preview} ${notfuzzy} --tac -1 --no-sort --tiebreak=end,index --header=\"Choose a directory to jump to:\" ${args}"
-
-    cmd="res=\$({ ${zshz_listing} ; ${fdlisting} } | ${sorter} | ${fzfcmd})"
-    eval ${cmd}
+    local sorter="$sedcmd -e 's,$HOME,\~,' -e 's,/$,,'"
+    local fzfcmd="fzf ${preview} ${notfuzzy} -1 --no-sort --filepath-word --header=\"Choose a directory to jump to:\" ${args}"
+    res=$({ eval ${zshz_listing} ; eval ${fdlisting} } | eval ${sorter} | awk '!seen[$0]++' | eval ${fzfcmd})
 
     [[ -n ${res} ]] && {
         [[ ${res} =~ ^\~ ]] && res=${res/#\~/${HOME}}
         echo ${res}
-        [[ -z ${opt_p} ]] && {
-            cd ${res}
-        }
+        [[ -z ${opt_p} ]] && cd ${res}
     }
 }
 # vim: ft=zsh
