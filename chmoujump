@@ -25,11 +25,22 @@ function chmoujump() {
         preview_command="ls -1 -R {}"
     fi
 
-    while getopts ":npfPAa" opt; do
+    while getopts ":npfPAah" opt; do
         case $opt in
             a) choosealias=true ;;
             A) listalias=true ;;
             f) notfuzzy="" ;;
+            h) print "Usage: chmoujump [options] [directory]
+Options:
+  -a    Choose from saved aliases
+  -A    List all saved aliases
+  -f    Use fuzzy matching
+  -n    Don't use zshz for matching
+  -p    Print the target directory instead of changing to it
+  -P    Show directory preview in selection
+  -h    Show this help message
+                "
+                return 0 ;;
             n) opt_n=true ;;
             p) opt_p=true ;;
             P) preview="--preview=\"${preview_command}\"" ;;
@@ -57,12 +68,19 @@ function chmoujump() {
     }
 
     [[ ${choosealias} == true ]] && {
-        choosealias=$(chmoujump -A | fzf --tac)
-        choosealias=${choosealias##* }
-        [[ ${choosealias} =~ ^\~ ]] && choosealias=${choosealias/#\~/${HOME}}
-        [[ -z ${opt_p} ]] && cd ${choosealias}
+        local alias_choice
+        alias_choice=$(for key in ${(k)CHMOUJUMP_ALIASES}; do
+                printf "%-15s -> %s\n" "$key" "${CHMOUJUMP_ALIASES[$key]/$HOME/~}"
+        done | fzf --tac --header="Choose an alias:")
+
+        [[ -n ${alias_choice} ]] && {
+            local selected_alias=${alias_choice%%\ ->*}
+            local target=${CHMOUJUMP_ALIASES[$selected_alias]}
+            [[ -z ${opt_p} ]] && cd ${target} || echo ${target}
+        }
         return
     }
+
 
     fnd=$1
     if [[ -n ${fnd} ]]; then
