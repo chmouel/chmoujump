@@ -67,19 +67,43 @@ Options:
         return
     }
 
+
     [[ ${choosealias} == true ]] && {
         local alias_choice
-        alias_choice=$(for key in ${(k)CHMOUJUMP_ALIASES}; do
-                printf "%-15s -> %s\n" "$key" "${CHMOUJUMP_ALIASES[$key]/$HOME/~}"
-        done | fzf --tac --header="Choose an alias:")
+
+        # Get zshz ranking data
+        local -A zshz_ranks
+        if (( $+functions[zshz] )); then
+            local rank ppath
+            zshz -l | while read -r rank ppath; do
+                [[ -n "$rank" && -n "$ppath" ]] && zshz_ranks[$ppath]=$rank
+            done
+        fi
+
+        # Prepare sorted aliases based on zshz ranks
+        local sorted_output=""
+        for key in ${(k)CHMOUJUMP_ALIASES}; do
+            local target=${CHMOUJUMP_ALIASES[$key]}
+            local rank=${zshz_ranks[$target]:-0}  # Use 0 if not in zshz
+            [[ -e ${target} ]] || continue
+
+            # Format for sorting: rank|key|formatted_display
+            sorted_output+="${rank}|${key}|$(printf "%-15s -> %s\n" "$key" "${CHMOUJUMP_ALIASES[$key]/$HOME/~}")"$'\n'
+        done
+
+        # Sort by rank (descending) and display
+        alias_choice=$(print -l ${(f)sorted_output} | sort -t '|' -k1,1nr | cut -d'|' -f3- | fzf \
+            --header="Choose an alias (sorted by frequency/recency):")
 
         [[ -n ${alias_choice} ]] && {
-            local selected_alias=${alias_choice%%\ ->*}
+            local selected_alias=${${alias_choice%%\ ->*}%%[[:space:]]#}
             local target=${CHMOUJUMP_ALIASES[$selected_alias]}
             [[ -z ${opt_p} ]] && cd ${target} || echo ${target}
         }
         return
     }
+
+
 
 
     fnd=$1
