@@ -1,20 +1,50 @@
 #!/usr/bin/env zsh
 function chmoujump() {
-    local jumpdirs=${CHMOUJUMP_DIRS:-"$HOME/git"}
-    [[ -d ${jumpdirs} ]] || jumpdirs=$HOME
-    local opt_n opt_p opt fnd listalias choosealias
-    local res args preview
-    local notfuzzy="-e"
+    # Dependency validation with fallbacks
     local sedcmd="sed"
     local fdcmd="fd"
+    local missing_deps=()
 
+    # Check for critical dependencies
+    (( $+commands[fzf] )) || missing_deps+=("fzf")
+
+    # Set up command alternatives
     (( $+commands[gsed] )) && sedcmd="gsed"
-    (( $+commands[fdfind] )) && fdcmd="fdfind"
+    if (( $+commands[fd] )); then
+        fdcmd="fd"
+    elif (( $+commands[fdfind] )); then
+        fdcmd="fdfind"
+    elif (( $+commands[find] )); then
+        fdcmd="find"
+    else
+        missing_deps+=("fd or find")
+    fi
+
+    # Report missing critical dependencies
+    if (( ${#missing_deps[@]} > 0 )); then
+        print "chmoujump: missing required dependencies: ${(j:, :)missing_deps}" >&2
+        print "Please install the missing commands and try again." >&2
+        return 1
+    fi
+
+    # Validate and sanitize CHMOUJUMP_DIRS
+    local jumpdirs_input=${CHMOUJUMP_DIRS:-"$HOME/git"}
+    local jumpdirs=""
+    local dir
+    for dir in ${(z)jumpdirs_input}; do
+        # Basic path sanitization - remove dangerous characters and resolve
+        dir=${dir//[;&|'`'$()]/}
+        dir=${~dir}  # Expand tilde and parameters
+        [[ -d "$dir" && -r "$dir" ]] && jumpdirs="$jumpdirs $dir"
+    done
+    [[ -z "$jumpdirs" ]] && jumpdirs="$HOME"  # Fallback to HOME if nothing valid
+
+    local opt_n opt_p opt fnd listalias choosealias
+    local res preview
+    local notfuzzy="-e"
 
     local reverser="tac"
     [[ $OSTYPE == darwin* ]] && (( ! $+commands[tac] )) && reverser="tail -r"
-
-    local zshz_listing="{ zshz -t | ${reverser} | $sedcmd 's/.* //' }"
 
     local preview_command
     if (( $+commands[exa] )); then
@@ -50,10 +80,8 @@ Options:
     done
     (( OPTIND > 1 )) && shift $(( OPTIND - 1 ))
 
-    (( $+functions[zshz] )) || {
-        opt_n=true
-        zshz_listing="{ true }"
-    }
+    # Check if zshz is available for history-based navigation
+    (( $+functions[zshz] )) || opt_n=true
 
     [[ ${listalias} == true ]] && {
         zmodload zsh/stat
@@ -75,9 +103,9 @@ Options:
         local -A zshz_ranks
         if (( $+functions[zshz] )); then
             local rank ppath
-            zshz -l | while read -r rank ppath; do
+            while read -r rank ppath; do
                 [[ -n "$rank" && -n "$ppath" ]] && zshz_ranks[$ppath]=$rank
-            done
+            done < <(zshz -l)
         fi
 
         # Prepare sorted aliases based on zshz ranks
@@ -106,37 +134,92 @@ Options:
 
 
 
-    fnd=$1
+    # Sanitize user input
+    fnd="$1"
     if [[ -n ${fnd} ]]; then
+        # Remove potentially dangerous characters from user input
+        fnd=${fnd//[;&|'`'$()]/}
+        # Limit length to prevent abuse
+        [[ ${#fnd} -gt 100 ]] && fnd=${fnd[1,100]}
+
         if (( ${+CHMOUJUMP_ALIASES[$fnd]} )); then
-            echo "ALIAS: ${CHMOUJUMP_ALIASES[$fnd]}"
-            [[ -z ${opt_p} ]] && cd ${CHMOUJUMP_ALIASES[$fnd]}
+            local alias_target=${CHMOUJUMP_ALIASES[$fnd]}
+            # Validate alias target exists and is a directory
+            if [[ -d "$alias_target" && -r "$alias_target" ]]; then
+                echo "ALIAS: $alias_target"
+                [[ -z ${opt_p} ]] && cd "$alias_target"
+            else
+                print "chmoujump: alias '$fnd' points to invalid directory: $alias_target" >&2
+                return 1
+            fi
             return
         fi
 
         [[ -z ${opt_n} ]] && {
             local zz=$(zshz -e ${fnd})
-            [[ -n ${zz} ]] && {
-                echo "ZSHZ: ${zz}"
-                [[ -z ${opt_p} ]] && {
-                    [[ ${zz} =~ ^\~ ]] && zz=${zz/#\~/${HOME}}
-                    cd ${zz}
-                }
-                return
-            }
+            if [[ -n ${zz} ]]; then
+                # Expand tilde if present
+                [[ ${zz} =~ ^\~ ]] && zz=${zz/#\~/${HOME}}
+                # Validate directory exists and is accessible
+                if [[ -d "$zz" && -r "$zz" ]]; then
+                    echo "ZSHZ: $zz"
+                    [[ -z ${opt_p} ]] && cd "$zz"
+                    return
+                else
+                    print "chmoujump: zshz result is not a valid directory: $zz" >&2
+                    # Continue to fzf selection instead of failing
+                fi
+            fi
         }
-        args="-q ${fnd}"
     fi
 
-    local fdlisting="{ ${fdcmd} -d 2 -t d . ${=jumpdirs} }"
-    local sorter="$sedcmd -e 's,$HOME,\~,' -e 's,/$,,'"
-    local fzfcmd="fzf ${preview} ${notfuzzy} -1 --no-sort --filepath-word --header=\"Choose a directory to jump to:\" ${args}"
-    res=$({ eval ${zshz_listing} ; eval ${fdlisting} } | eval ${sorter} | awk '!seen[$0]++' | eval ${fzfcmd})
+    # Build directory listing safely without eval
+    local -a fzf_cmd_parts
+    fzf_cmd_parts=(fzf)
+    [[ -n $preview ]] && fzf_cmd_parts+=(--preview="$preview_command")
+    [[ -n $notfuzzy ]] && fzf_cmd_parts+=($notfuzzy)
+    fzf_cmd_parts+=(--no-sort --filepath-word --header="Choose a directory to jump to:")
+    [[ -n $fnd ]] && fzf_cmd_parts+=(-q "$fnd")
 
-    [[ -n ${res} ]] && {
+    # Safely split jumpdirs and validate each directory
+    local -a jumpdir_array
+    local dir
+    for dir in ${(z)jumpdirs}; do
+        # Sanitize and validate directory path
+        dir=${dir//[;&|'`'$()]/}  # Remove dangerous characters
+        [[ -d "$dir" ]] && jumpdir_array+=("$dir")
+    done
+
+    # Build combined directory listing
+    {
+        # Get zshz listing safely
+        if (( $+functions[zshz] )); then
+            zshz -t | ${reverser} | $sedcmd 's/.* //'
+        fi
+
+        # Get directory listing safely
+        if (( ${#jumpdir_array} > 0 )); then
+            if [[ $fdcmd == "find" ]]; then
+                find . "${jumpdir_array[@]}" -maxdepth 2 -type d 2>/dev/null
+            else
+                # fd or fdfind syntax
+                ${fdcmd} -d 2 -t d . "${jumpdir_array[@]}" 2>/dev/null
+            fi
+        fi
+    } | $sedcmd -e 's,$HOME,\~,' -e 's,/$,,' | awk '!seen[$0]++' | "${fzf_cmd_parts[@]}" | read -r res
+
+    if [[ -n ${res} ]]; then
+        # Expand tilde if present
         [[ ${res} =~ ^\~ ]] && res=${res/#\~/${HOME}}
-        echo ${res}
-        [[ -z ${opt_p} ]] && cd ${res}
-    }
+
+        # Validate final result is a valid, accessible directory
+        if [[ -d "$res" && -r "$res" ]]; then
+            echo "$res"
+            [[ -z ${opt_p} ]] && cd "$res"
+        else
+            print "chmoujump: selected path is not a valid directory: $res" >&2
+            return 1
+        fi
+    fi
 }
 # vim: ft=zsh
