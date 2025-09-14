@@ -1,5 +1,5 @@
 #!/usr/bin/env zsh
-function chmoujump() {
+chmoujump() {
     # Dependency validation with fallbacks
     local sedcmd="sed"
     local fdcmd="fd"
@@ -183,10 +183,8 @@ Options:
 
     # Safely split jumpdirs and validate each directory
     local -a jumpdir_array
-    local dir
     for dir in ${(z)jumpdirs}; do
-        # Sanitize and validate directory path
-        dir=${dir//[;&|'`'$()]/}  # Remove dangerous characters
+        local dir=${dir//[;&|'`'$()]/}  # Sanitize and validate directory path
         [[ -d "$dir" ]] && jumpdir_array+=("$dir")
     done
 
